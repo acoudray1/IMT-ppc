@@ -10,6 +10,7 @@
 
 import org.chocosolver.examples.AbstractProblem;
 import org.chocosolver.solver.Model;
+import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 
 /**
@@ -98,7 +99,13 @@ public class Zebra extends AbstractProblem {
     }
 
     public void solve() {
-        while (model.getSolver().solve()) {
+        try {
+            model.getSolver().propagate();
+        } catch (ContradictionException e) {
+            e.printStackTrace();
+        }
+
+        /*while (model.getSolver().solve()) */{
             int z = zebra.getValue();
             int n = -1;
             for (int i = 0; i < SIZE; i++) {
@@ -113,6 +120,7 @@ public class Zebra extends AbstractProblem {
             print(attr);
         }
     }
+
     private void print(IntVar[][] pos) {
         System.out.printf("%-13s%-13s%-13s%-13s%-13s%-13s%n", "",
                 sHouse[0], sHouse[1], sHouse[2], sHouse[3], sHouse[4]);
