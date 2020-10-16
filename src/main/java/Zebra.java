@@ -99,15 +99,15 @@ public class Zebra extends AbstractProblem {
     }
 
     public void solve() {
-        ProblemExplanation pe = new ProblemExplanation(model);
-        pe.greedyExplanation();
-        try {
+        ProblemExplanation pe = new ProblemExplanation(model, attr);
+        pe.explain();
+        /*try {
             model.getSolver().propagate();
         } catch (ContradictionException e) {
             e.printStackTrace();
-        }
+        }*/
 
-        /*while (model.getSolver().solve()) */{
+        /*while (model.getSolver().solve())*/ {
             int z = zebra.getValue();
             int n = -1;
             for (int i = 0; i < SIZE; i++) {
