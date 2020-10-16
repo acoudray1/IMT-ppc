@@ -99,6 +99,8 @@ public class Zebra extends AbstractProblem {
     }
 
     public void solve() {
+        ProblemExplanation pe = new ProblemExplanation(model);
+        pe.greedyExplanation();
         try {
             model.getSolver().propagate();
         } catch (ContradictionException e) {
