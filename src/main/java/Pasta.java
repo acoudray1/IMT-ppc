@@ -72,7 +72,7 @@ public class Pasta extends AbstractProblem {
         claudia.ne(putta).post();
 
         // 5. The person who ordered rotini is either the person who paid $8 more than Damon or the person who paid $8 less than Damon
-        roti.dist(damon).eq(2);
+        roti.dist(damon).eq(2).post();
 
         // 6. The person who ordered capellini is either Damon or Claudia
         cape.in(claudia, damon).post();
