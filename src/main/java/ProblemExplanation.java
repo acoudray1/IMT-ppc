@@ -68,12 +68,13 @@ public class ProblemExplanation {
         System.out.println(this.model.toString());
         // faire le propager() en récursif pour tester l'ensemble des solutions avant de valider le modele
         // et donc pouvoir retourner en arrière sur un état ancien
+        // tester en récursif
 
-        // copier un modele : Solver.moveForward() && Solver.moveBackward()
+        // sauvegarder un modele : Solver.moveForward() && Solver.moveBackward()
         // -> sauvegarde d'un etat (wordPush()) avant d'appliquer une modification grâce à la méthode moveForward()
         // -> restauration d'un état (wordPop())
 
-        // voir objet environnement du modèle
+        // voir objet environnement du modèle - model.getEnvironment().wordPush()
     }
 
     private void candidateExplanation() {
