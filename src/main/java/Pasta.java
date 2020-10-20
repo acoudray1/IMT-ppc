@@ -76,11 +76,9 @@ public class Pasta extends AbstractProblem {
 
         // 6. The person who ordered capellini is either Damon or Claudia
         cape.in(claudia, damon).post();
-        //cape.eq(damon).or(cape.eq(claudia)).post();
 
         // 7. The person who chose arrabiata sauce is either Angie or Elisa
         arra.in(angie, elisa).post();
-        //arra.eq(angie).or(arra.eq(elisa)).post();
 
         // 8. The person who chose arrabiata sauce ordered farfalle
         arra.eq(farfa).post();
@@ -91,11 +89,11 @@ public class Pasta extends AbstractProblem {
     }
 
     public void solve() {
-        System.out.println(model.toString());
-        //ProblemExplanation pe = new ProblemExplanation(model, attr);
-        //print(attr);
-        //pe.explain();
+        ProblemExplanation pe = new ProblemExplanation(model, attr);
+        pe.explain();
+        print(attr);
 
+        /*
         try {
             model.getSolver().propagate();
         } catch (ContradictionException e) {
@@ -104,7 +102,7 @@ public class Pasta extends AbstractProblem {
         System.out.println("--------------------------\n----------------------");
         System.out.println(model.toString());
         print(attr);
-
+        */
         /*
         while (model.getSolver().solve()) {
             System.out.println("--------------------------\n----------------------");
