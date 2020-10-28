@@ -2,14 +2,8 @@ import org.chocosolver.solver.Model;
 import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.exception.ContradictionException;
-import org.chocosolver.solver.expression.discrete.relational.ReExpression;
 import org.chocosolver.solver.variables.IntVar;
-import org.chocosolver.solver.variables.Variable;
-
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 public class ProblemExplanation {
     protected Model model;
@@ -21,6 +15,7 @@ public class ProblemExplanation {
      * ProblemExplanation constructor
      *
      * @param m
+     * @param attributes
      */
     public ProblemExplanation(Model m, IntVar[][] attributes) {
         this.model = m;
@@ -29,49 +24,34 @@ public class ProblemExplanation {
         this.isDone = false;
     }
 
+    /**
+     * explain explique la résolution du problème
+     */
     public void explain() {
         this.greedyExplanation();
     }
 
-    /*
-    Constraint fact1 = norge.ne(oj).decompose(); // définir un fait
-    model.post(fact1); // l'ajouter au model
-    model.unpost(fact1); // le retirer
+    /**
+     * greedyExplanation utilise la fonction recursiveSearch() pour boucler sur notre modele
      */
-
-
     private void greedyExplanation() {
-        HashMap<Integer, ArrayList<IntVar>> listeEquivalence = new HashMap<Integer, ArrayList<IntVar>>();
         try {
             this.solver.propagate();
         } catch (ContradictionException e) {
             e.printStackTrace();
         }
         System.out.println(this.model.toString());
-
-        // Récupération des variables instanciées par colonnes
-        /*for (int i =  0; i < this.attr.length ; i++) {
-            for(int j =  0 ; j < this.attr[i].length ; j++) {
-
-            }
-        }*/
-
         this.model.getEnvironment().worldPush();
         System.out.println("current world index: (before rec) " + this.model.getEnvironment().getWorldIndex());
+
         this.recursiveSearch(0, 0);
-
-        //System.out.println(this.model.toString());
-        // faire le propager() en récursif pour tester l'ensemble des solutions avant de valider le modele
-        // et donc pouvoir retourner en arrière sur un état ancien
-        // tester en récursif
-
-        // sauvegarder un modele : Solver.moveForward() && Solver.moveBackward()
-        // -> sauvegarde d'un etat (wordPush()) avant d'appliquer une modification grâce à la méthode moveForward()
-        // -> restauration d'un état (wordPop())
-
-        // voir objet environnement du modèle - model.getEnvironment().wordPush()
     }
 
+    /**
+     * recursiveSearch - récursion sur notre tableau d'attributs afin de trouver une solution au problème
+     * @param i
+     * @param j
+     */
     private void recursiveSearch(int i, int j) {
         System.out.println("----- debut -----");
         System.out.println("recursive: " + i + " ; " + j);
@@ -79,11 +59,13 @@ public class ProblemExplanation {
 
         Iterator it = this.attr[i][j].iterator();
 
+        // itération sur les valeurs possibles d'un attribut
         while (it.hasNext() && !isDone) {
             System.out.println("-- iteration");
-            //System.out.println(this.model.toString());
             Integer priceIndex = (Integer) it.next();
             System.out.println("priceIndex: " + priceIndex + " ; hasNext? " + it.hasNext());
+
+            // création de la contrainte fixant une valeur à notre attribut et ajout dans le modèle
             Constraint cst = this.attr[i][j].eq(priceIndex).decompose();
             model.post(cst);
             System.out.println("contrainte: " + cst.toString());
@@ -91,8 +73,11 @@ public class ProblemExplanation {
                 // sauvegarde de l'état avant propagation
                 this.model.getEnvironment().worldPush();
                 System.out.println("current world index: (after push) " + this.model.getEnvironment().getWorldIndex());
+
                 this.solver.propagate();
                 System.out.println("contraint ok");
+
+                // vérification de l'atteinte des limites du tableau (une valeur set sur chaque attribut et donc pb résolu)
                 if (i == attr.length - 1 && j == attr[i].length - 1) {
                     System.out.println("isCompleted");
                     this.isDone = true;
@@ -106,23 +91,28 @@ public class ProblemExplanation {
                         x = i + 1;
                     }
                     System.out.println("avance - " + x + " ; " + y);
+                    // appel réccursif pour fixer une valeur sur le prochain attribut
                     this.recursiveSearch(x, y);
                     if (!isDone) {
+                        // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
                         model.unpost(cst);
                     }
                 }
             } catch (ContradictionException e) {
+                // erreur lors de la propagation
                 System.out.println("contraint failed");
                 e.printStackTrace();
+                // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
                 model.unpost(cst);
-                // retour a l'etat sauvegarder
+                // retour a l'etat sauvegardé
                 this.model.getEnvironment().worldPop();
                 System.out.println("current world index: (after pop) " + this.model.getEnvironment().getWorldIndex());
             }
         }
 
         if (!isDone) {
-            // retour a l'etat sauvegarder
+            // aucune des valeurs possibles pour l'attribut, retour au world initial et rebouclage sur les valeurs suivantes de notre attribut précédent
+            // retour a l'etat sauvegardé
             this.model.getEnvironment().worldPop();
             System.out.println("current world index: (!isDone) " + this.model.getEnvironment().getWorldIndex());
             System.out.println("recule - " + i + " ; " + j);
@@ -131,10 +121,16 @@ public class ProblemExplanation {
         System.out.println("----- fin -----");
     }
 
+    /**
+     * candidateExplanation
+     */
     private void candidateExplanation() {
 
     }
 
+    /**
+     * minExplanation
+     */
     private void minExplanation() {
 
     }

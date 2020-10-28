@@ -94,16 +94,6 @@ public class Pasta extends AbstractProblem {
         print(attr);
 
         /*
-        try {
-            model.getSolver().propagate();
-        } catch (ContradictionException e) {
-            e.printStackTrace();
-        }
-        System.out.println("--------------------------\n----------------------");
-        System.out.println(model.toString());
-        print(attr);
-        */
-        /*
         while (model.getSolver().solve()) {
             System.out.println("--------------------------\n----------------------");
             System.out.println(model.toString());
