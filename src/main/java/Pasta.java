@@ -50,8 +50,8 @@ public class Pasta extends AbstractProblem {
         IntVar taglio  = attr[PATES][2];
         IntVar roti    = attr[PATES][3];
 
-        IntVar elisa  = attr[PERSONNES][0];
-        IntVar claudia    = attr[PERSONNES][1];
+        IntVar elisa   = attr[PERSONNES][0];
+        IntVar claudia = attr[PERSONNES][1];
         IntVar damon   = attr[PERSONNES][2];
         IntVar angie   = attr[PERSONNES][3];
 
