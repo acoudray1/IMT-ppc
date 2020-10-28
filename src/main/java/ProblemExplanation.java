@@ -56,6 +56,8 @@ public class ProblemExplanation {
             }
         }*/
 
+        this.model.getEnvironment().worldPush();
+        System.out.println("current world index: (before rec) " + this.model.getEnvironment().getWorldIndex());
         this.recursiveSearch(0, 0);
 
         //System.out.println(this.model.toString());
@@ -73,28 +75,31 @@ public class ProblemExplanation {
     private void recursiveSearch(int i, int j) {
         System.out.println("----- debut -----");
         System.out.println("recursive: " + i + " ; " + j);
-        System.out.println("current world index: (before push) " + this.model.getEnvironment().getWorldIndex());
-        // sauvegarde de l'état avant propagation
-        this.model.getEnvironment().worldPush();
+        System.out.println("attributs: " + this.attr[i][j]);
 
         Iterator it = this.attr[i][j].iterator();
 
         while (it.hasNext() && !isDone) {
+            System.out.println("-- iteration");
+            //System.out.println(this.model.toString());
             Integer priceIndex = (Integer) it.next();
             System.out.println("priceIndex: " + priceIndex + " ; hasNext? " + it.hasNext());
             Constraint cst = this.attr[i][j].eq(priceIndex).decompose();
             model.post(cst);
             System.out.println("contrainte: " + cst.toString());
             try {
+                // sauvegarde de l'état avant propagation
+                this.model.getEnvironment().worldPush();
+                System.out.println("current world index: (after push) " + this.model.getEnvironment().getWorldIndex());
                 this.solver.propagate();
                 System.out.println("contraint ok");
-                if (this.solver.isSearchCompleted()) {
+                if (i == attr.length - 1 && j == attr[i].length - 1) {
                     System.out.println("isCompleted");
                     this.isDone = true;
                 } else {
                     int x = i;
                     int y = j;
-                    if (j < this.attr[i].length) {
+                    if (j < this.attr[i].length - 1) {
                         y = j + 1;
                     } else {
                         y = 0;
@@ -103,10 +108,7 @@ public class ProblemExplanation {
                     System.out.println("avance - " + x + " ; " + y);
                     this.recursiveSearch(x, y);
                     if (!isDone) {
-                        // retour a l'etat sauvegarder
-                        this.model.getEnvironment().worldPop();
-                        System.out.println("current world index: (!isDone) " + this.model.getEnvironment().getWorldIndex());
-                        System.out.println("recule - " + i + " ; " + j);
+                        model.unpost(cst);
                     }
                 }
             } catch (ContradictionException e) {
@@ -115,8 +117,7 @@ public class ProblemExplanation {
                 model.unpost(cst);
                 // retour a l'etat sauvegarder
                 this.model.getEnvironment().worldPop();
-                this.model.getEnvironment().worldPush();
-                System.out.println("current world index: (after pop & push) " + this.model.getEnvironment().getWorldIndex());
+                System.out.println("current world index: (after pop) " + this.model.getEnvironment().getWorldIndex());
             }
         }
 
