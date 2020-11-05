@@ -5,6 +5,7 @@ import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class ProblemExplanation {
@@ -14,6 +15,7 @@ public class ProblemExplanation {
     protected ArrayList<Constraint> goodCstrs;
     protected Model candidateModel;
     protected IntVar[][] candidateAttr;
+    protected HashMap<Constraint, ContradictionException> explanation;
 
     /**
      * ProblemExplanation constructor
@@ -28,6 +30,7 @@ public class ProblemExplanation {
         this.goodCstrs = new ArrayList<Constraint>();
         this.candidateModel = m2;
         this.candidateAttr = attributes2;
+        this.explanation = new HashMap<Constraint, ContradictionException>();
     }
 
     /**
@@ -36,6 +39,8 @@ public class ProblemExplanation {
     public void explain() {
         this.greedyExplanation();
         System.out.println(this.goodCstrs.toString());
+        this.candidateExplanation();
+        System.out.println(this.explanation.toString());
     }
 
     /**
@@ -74,8 +79,9 @@ public class ProblemExplanation {
 
             // création de la contrainte fixant une valeur à notre attribut et ajout dans le modèle
             Constraint cst = this.attr[i][j].eq(priceIndex).decompose();
+            Constraint candidateCst = this.candidateAttr[i][j].eq(priceIndex).decompose();
             this.model.post(cst);
-            this.goodCstrs.add(cst);
+            this.goodCstrs.add(candidateCst);
             System.out.println("contrainte: " + cst.toString());
             try {
                 // sauvegarde de l'état avant propagation
@@ -104,7 +110,7 @@ public class ProblemExplanation {
                     if (!isDone) {
                         // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
                         this.model.unpost(cst);
-                        this.goodCstrs.remove(cst);
+                        this.goodCstrs.remove(candidateCst);
                     }
                 }
             } catch (ContradictionException e) {
@@ -113,7 +119,7 @@ public class ProblemExplanation {
                 e.printStackTrace();
                 // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
                 this.model.unpost(cst);
-                this.goodCstrs.remove(cst);
+                this.goodCstrs.remove(candidateCst);
                 // retour a l'etat sauvegardé
                 this.model.getEnvironment().worldPop();
                 System.out.println("current world index: (after pop) " + this.model.getEnvironment().getWorldIndex());
@@ -135,7 +141,66 @@ public class ProblemExplanation {
      * candidateExplanation
      */
     private void candidateExplanation() {
+        ArrayList<Constraint> cstrToRemove = new ArrayList<Constraint>();
+        try {
+            this.candidateModel.getSolver().propagate();
+        } catch (ContradictionException e) {
+            e.printStackTrace();
+        }
 
+        System.out.println(this.candidateModel.toString());
+        this.candidateModel.getEnvironment().worldPush();
+
+        for(int i = 0; i < this.goodCstrs.size(); i++) {
+            System.out.println("----- debut -----");
+            Constraint goodCstr = this.goodCstrs.get(i);
+            System.out.println("index: " + i + " ; goodConstraint: " + goodCstr);
+            Constraint oppositeCstr = goodCstr.getOpposite();
+            System.out.println("oppositeConstraint: " + oppositeCstr);
+            this.candidateModel.post(oppositeCstr);
+
+            try {
+                this.candidateModel.getSolver().propagate();
+                for (int j = i + 1; j < this.goodCstrs.size(); j++) {
+                    Constraint goodCstr2 = this.goodCstrs.get(j);
+                    System.out.println("jndex: " + j + " ; goodConstraint: " + goodCstr2);
+                    cstrToRemove.add(goodCstr2);
+                    this.candidateModel.post(goodCstr2);
+                    this.candidateModel.getSolver().propagate();
+                }
+            } catch (ContradictionException e) {
+                e.printStackTrace();
+                // save de la contrainte bonne et de pq elle est bonne
+                this.explanation.put(goodCstr, e);
+                System.out.println("explanation: " + explanation);
+                // suppression de toutes les mauvaises contraintes
+                for (Constraint cstr: cstrToRemove) {
+                    this.candidateModel.unpost(cstr);
+                }
+                cstrToRemove.clear();
+                this.candidateModel.unpost(oppositeCstr);
+                // retour a l'etat sauvegardé
+                this.model.getEnvironment().worldPop();
+                // ajout bonne contrainte
+                this.candidateModel.post(goodCstr);
+                // propag et push
+                try {
+                    this.candidateModel.getSolver().propagate();
+                    this.candidateModel.getEnvironment().worldPush();
+                } catch (ContradictionException contradictionException) {
+                    // erreur ne devant pas arriver
+                    contradictionException.printStackTrace();
+                }
+            }
+            System.out.println("----- fin -----");
+        }
+
+        // hypothese 1 : on prend la contradiction, on part du principe qu'elle est vraie, on applique les autres
+        //      contraintes connues une à une jusqu'à trouver une contradiction que l'on sauvegarde.
+        // (implémentée)
+
+        // hypothese 2 : on prend la contradiction, on part du principe qu'elle est vraie et on recherche les solutions
+        //      possibles jusqu'à vérifier que tout est contradiction et qu'aucune solution n'est possible
     }
 
     /**
