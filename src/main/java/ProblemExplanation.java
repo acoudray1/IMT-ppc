@@ -167,6 +167,14 @@ public class ProblemExplanation {
                     cstrToRemove.add(goodCstr2);
                     this.candidateModel.post(goodCstr2);
                     this.candidateModel.getSolver().propagate();
+                    // Ajout du MUS - recherche des contraintes créant notre contradiction
+
+                    // On part de notre état où on a une contradiction
+                    //     -> on prend la liste des contraintes qui mènent à cet état
+                    //     -> on enlève les contraintes une à une pour ne garder que celles qui créent la contraction
+                    //         (si on enlève ça change pas, on passe à la suivant, si quand on enlève il n'y a pu la contradiction on la
+                    //         remet et on passe à la suivante) -> quand on a plus que les contraintes qui créent la contraction c'est fini
+                    // Et on fait ça pour chaque contrainte que l'on rajoute à la main
                 }
             } catch (ContradictionException e) {
                 e.printStackTrace();
@@ -197,10 +205,6 @@ public class ProblemExplanation {
 
         // hypothese 1 : on prend la contradiction, on part du principe qu'elle est vraie, on applique les autres
         //      contraintes connues une à une jusqu'à trouver une contradiction que l'on sauvegarde.
-        // (implémentée)
-
-        // hypothese 2 : on prend la contradiction, on part du principe qu'elle est vraie et on recherche les solutions
-        //      possibles jusqu'à vérifier que tout est contradiction et qu'aucune solution n'est possible
     }
 
     /**
