@@ -3,13 +3,15 @@ import org.chocosolver.solver.Solver;
 import org.chocosolver.solver.constraints.Constraint;
 import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
+
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ProblemExplanation {
     protected Model model;
     protected IntVar[][] attr;
-    protected Solver solver;
     protected boolean isDone;
+    protected ArrayList<Constraint> goodCstrs;
     protected Model candidateModel;
     protected IntVar[][] candidateAttr;
 
@@ -22,8 +24,8 @@ public class ProblemExplanation {
     public ProblemExplanation(Model m, IntVar[][] attributes, Model m2, IntVar[][] attributes2) {
         this.model = m;
         this.attr = attributes;
-        this.solver = this.model.getSolver();
         this.isDone = false;
+        this.goodCstrs = new ArrayList<Constraint>();
         this.candidateModel = m2;
         this.candidateAttr = attributes2;
     }
@@ -33,6 +35,7 @@ public class ProblemExplanation {
      */
     public void explain() {
         this.greedyExplanation();
+        System.out.println(this.goodCstrs.toString());
     }
 
     /**
@@ -40,7 +43,7 @@ public class ProblemExplanation {
      */
     private void greedyExplanation() {
         try {
-            this.solver.propagate();
+            this.model.getSolver().propagate();
         } catch (ContradictionException e) {
             e.printStackTrace();
         }
@@ -71,14 +74,15 @@ public class ProblemExplanation {
 
             // création de la contrainte fixant une valeur à notre attribut et ajout dans le modèle
             Constraint cst = this.attr[i][j].eq(priceIndex).decompose();
-            model.post(cst);
+            this.model.post(cst);
+            this.goodCstrs.add(cst);
             System.out.println("contrainte: " + cst.toString());
             try {
                 // sauvegarde de l'état avant propagation
                 this.model.getEnvironment().worldPush();
                 System.out.println("current world index: (after push) " + this.model.getEnvironment().getWorldIndex());
 
-                this.solver.propagate();
+                this.model.getSolver().propagate();
                 System.out.println("contraint ok");
 
                 // vérification de l'atteinte des limites du tableau (une valeur set sur chaque attribut et donc pb résolu)
@@ -99,7 +103,8 @@ public class ProblemExplanation {
                     this.recursiveSearch(x, y);
                     if (!isDone) {
                         // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
-                        model.unpost(cst);
+                        this.model.unpost(cst);
+                        this.goodCstrs.remove(cst);
                     }
                 }
             } catch (ContradictionException e) {
@@ -107,7 +112,8 @@ public class ProblemExplanation {
                 System.out.println("contraint failed");
                 e.printStackTrace();
                 // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
-                model.unpost(cst);
+                this.model.unpost(cst);
+                this.goodCstrs.remove(cst);
                 // retour a l'etat sauvegardé
                 this.model.getEnvironment().worldPop();
                 System.out.println("current world index: (after pop) " + this.model.getEnvironment().getWorldIndex());
@@ -129,7 +135,6 @@ public class ProblemExplanation {
      * candidateExplanation
      */
     private void candidateExplanation() {
-        Model candidateModel;
 
     }
 

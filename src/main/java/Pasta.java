@@ -36,57 +36,71 @@ public class Pasta extends AbstractProblem {
     private Model candidateModel;
 
     public void buildModel() {
-        this.buildModelAndAttributes(model, attr);
-        this.buildModelAndAttributes(candidateModel, candidateAttr);
-    }
+        // first model building
+        model = new Model();
+        attr = model.intVarMatrix("attr", SIZE, SIZE, 1, SIZE);
 
-    private void buildModelAndAttributes(Model m, IntVar[][] a) {
-        m = new Model();
+        IntVar other   = attr[SAUCE][0];
+        IntVar arra    = attr[SAUCE][1];
+        IntVar mari    = attr[SAUCE][2];
+        IntVar putta   = attr[SAUCE][3];
 
-        a = m.intVarMatrix("attr", SIZE, SIZE, 1, SIZE);
+        IntVar cape    = attr[PATES][0];
+        IntVar farfa   = attr[PATES][1];
+        IntVar taglio  = attr[PATES][2];
+        IntVar roti    = attr[PATES][3];
 
-        IntVar other   = a[SAUCE][0];
-        IntVar arra    = a[SAUCE][1];
-        IntVar mari    = a[SAUCE][2];
-        IntVar putta   = a[SAUCE][3];
+        IntVar elisa   = attr[PERSONNES][0];
+        IntVar claudia = attr[PERSONNES][1];
+        IntVar damon   = attr[PERSONNES][2];
+        IntVar angie   = attr[PERSONNES][3];
 
-        IntVar cape    = a[PATES][0];
-        IntVar farfa   = a[PATES][1];
-        IntVar taglio  = a[PATES][2];
-        IntVar roti    = a[PATES][3];
+        model.allDifferent(attr[PATES]).post();
+        model.allDifferent(attr[SAUCE]).post();
+        model.allDifferent(attr[PERSONNES]).post();
 
-        IntVar elisa   = a[PERSONNES][0];
-        IntVar claudia = a[PERSONNES][1];
-        IntVar damon   = a[PERSONNES][2];
-        IntVar angie   = a[PERSONNES][3];
 
-        m.allDifferent(a[PATES]).post();
-        m.allDifferent(a[SAUCE]).post();
-        m.allDifferent(a[PERSONNES]).post();
+        cape.lt(arra).post();   // 1. The person who ordered capellini paid less than the person who chose arrabiata sauce
+        taglio.gt(angie).post();    // 2. The person who ordered tagliolini paid more than Angie
+        taglio.lt(mari).post(); // 3. The person who ordered tagliolini paid less than the person who chose marinara sauce
+        claudia.ne(putta).post();   // 4. Claudia did not choose puttanesca sauce
+        roti.dist(damon).eq(2).post();  // 5. The person who ordered rotini is either the person who paid $8 more than Damon or the person who paid $8 less than Damon
+        cape.in(claudia, damon).post(); // 6. The person who ordered capellini is either Damon or Claudia
+        arra.in(angie, elisa).post();   // 7. The person who chose arrabiata sauce is either Angie or Elisa
+        arra.eq(farfa).post();  // 8. The person who chose arrabiata sauce ordered farfalle
 
-        // 1. The person who ordered capellini paid less than the person who chose arrabiata sauce
-        cape.lt(arra).post();
+        // second model building
+        candidateModel = new Model();
+        candidateAttr = candidateModel.intVarMatrix("candidateAttr", SIZE, SIZE, 1, SIZE);
 
-        // 2. The person who ordered tagliolini paid more than Angie
-        taglio.gt(angie).post();
+        IntVar other2   = candidateAttr[SAUCE][0];
+        IntVar arra2    = candidateAttr[SAUCE][1];
+        IntVar mari2    = candidateAttr[SAUCE][2];
+        IntVar putta2   = candidateAttr[SAUCE][3];
 
-        // 3. The person who ordered tagliolini paid less than the person who chose marinara sauce
-        taglio.lt(mari).post();
+        IntVar cape2    = candidateAttr[PATES][0];
+        IntVar farfa2   = candidateAttr[PATES][1];
+        IntVar taglio2  = candidateAttr[PATES][2];
+        IntVar roti2    = candidateAttr[PATES][3];
 
-        // 4. Claudia did not choose puttanesca sauce
-        claudia.ne(putta).post();
+        IntVar elisa2   = candidateAttr[PERSONNES][0];
+        IntVar claudia2 = candidateAttr[PERSONNES][1];
+        IntVar damon2   = candidateAttr[PERSONNES][2];
+        IntVar angie2   = candidateAttr[PERSONNES][3];
 
-        // 5. The person who ordered rotini is either the person who paid $8 more than Damon or the person who paid $8 less than Damon
-        roti.dist(damon).eq(2).post();
+        candidateModel.allDifferent(candidateAttr[PATES]).post();
+        candidateModel.allDifferent(candidateAttr[SAUCE]).post();
+        candidateModel.allDifferent(candidateAttr[PERSONNES]).post();
 
-        // 6. The person who ordered capellini is either Damon or Claudia
-        cape.in(claudia, damon).post();
 
-        // 7. The person who chose arrabiata sauce is either Angie or Elisa
-        arra.in(angie, elisa).post();
-
-        // 8. The person who chose arrabiata sauce ordered farfalle
-        arra.eq(farfa).post();
+        cape2.lt(arra2).post();   // 1. The person who ordered capellini paid less than the person who chose arrabiata sauce
+        taglio2.gt(angie2).post();    // 2. The person who ordered tagliolini paid more than Angie
+        taglio2.lt(mari2).post(); // 3. The person who ordered tagliolini paid less than the person who chose marinara sauce
+        claudia2.ne(putta2).post();   // 4. Claudia did not choose puttanesca sauce
+        roti2.dist(damon2).eq(2).post();  // 5. The person who ordered rotini is either the person who paid $8 more than Damon or the person who paid $8 less than Damon
+        cape2.in(claudia2, damon2).post(); // 6. The person who ordered capellini is either Damon or Claudia
+        arra2.in(angie2, elisa2).post();   // 7. The person who chose arrabiata sauce is either Angie or Elisa
+        arra2.eq(farfa2).post();  // 8. The person who chose arrabiata sauce ordered farfalle
     }
 
     @Override
