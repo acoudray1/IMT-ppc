@@ -32,32 +32,37 @@ public class Pasta extends AbstractProblem {
             {"Elisa", "Claudia", "Damon", "Angie"}
     };
     private IntVar[][] attr;
-    private IntVar zebra;
+    private IntVar[][] candidateAttr;
+    private Model candidateModel;
 
     public void buildModel() {
+        this.buildModelAndAttributes(model, attr);
+        this.buildModelAndAttributes(candidateModel, candidateAttr);
+    }
 
-        model = new Model();
+    private void buildModelAndAttributes(Model m, IntVar[][] a) {
+        m = new Model();
 
-        attr = model.intVarMatrix("attr", SIZE, SIZE, 1, SIZE);
+        a = m.intVarMatrix("attr", SIZE, SIZE, 1, SIZE);
 
-        IntVar other   = attr[SAUCE][0];
-        IntVar arra    = attr[SAUCE][1];
-        IntVar mari    = attr[SAUCE][2];
-        IntVar putta   = attr[SAUCE][3];
+        IntVar other   = a[SAUCE][0];
+        IntVar arra    = a[SAUCE][1];
+        IntVar mari    = a[SAUCE][2];
+        IntVar putta   = a[SAUCE][3];
 
-        IntVar cape    = attr[PATES][0];
-        IntVar farfa   = attr[PATES][1];
-        IntVar taglio  = attr[PATES][2];
-        IntVar roti    = attr[PATES][3];
+        IntVar cape    = a[PATES][0];
+        IntVar farfa   = a[PATES][1];
+        IntVar taglio  = a[PATES][2];
+        IntVar roti    = a[PATES][3];
 
-        IntVar elisa   = attr[PERSONNES][0];
-        IntVar claudia = attr[PERSONNES][1];
-        IntVar damon   = attr[PERSONNES][2];
-        IntVar angie   = attr[PERSONNES][3];
+        IntVar elisa   = a[PERSONNES][0];
+        IntVar claudia = a[PERSONNES][1];
+        IntVar damon   = a[PERSONNES][2];
+        IntVar angie   = a[PERSONNES][3];
 
-        model.allDifferent(attr[PATES]).post();
-        model.allDifferent(attr[SAUCE]).post();
-        model.allDifferent(attr[PERSONNES]).post();
+        m.allDifferent(a[PATES]).post();
+        m.allDifferent(a[SAUCE]).post();
+        m.allDifferent(a[PERSONNES]).post();
 
         // 1. The person who ordered capellini paid less than the person who chose arrabiata sauce
         cape.lt(arra).post();
@@ -89,7 +94,7 @@ public class Pasta extends AbstractProblem {
     }
 
     public void solve() {
-        ProblemExplanation pe = new ProblemExplanation(model, attr);
+        ProblemExplanation pe = new ProblemExplanation(model, attr, candidateModel, candidateAttr);
         pe.explain();
         print(attr);
 

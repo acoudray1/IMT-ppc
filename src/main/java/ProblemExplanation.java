@@ -10,6 +10,8 @@ public class ProblemExplanation {
     protected IntVar[][] attr;
     protected Solver solver;
     protected boolean isDone;
+    protected Model candidateModel;
+    protected IntVar[][] candidateAttr;
 
     /**
      * ProblemExplanation constructor
@@ -17,11 +19,13 @@ public class ProblemExplanation {
      * @param m
      * @param attributes
      */
-    public ProblemExplanation(Model m, IntVar[][] attributes) {
+    public ProblemExplanation(Model m, IntVar[][] attributes, Model m2, IntVar[][] attributes2) {
         this.model = m;
         this.attr = attributes;
-        this.solver = model.getSolver();
+        this.solver = this.model.getSolver();
         this.isDone = false;
+        this.candidateModel = m2;
+        this.candidateAttr = attributes2;
     }
 
     /**
@@ -125,6 +129,7 @@ public class ProblemExplanation {
      * candidateExplanation
      */
     private void candidateExplanation() {
+        Model candidateModel;
 
     }
 
