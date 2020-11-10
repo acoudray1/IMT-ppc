@@ -5,6 +5,7 @@ import org.chocosolver.solver.exception.ContradictionException;
 import org.chocosolver.solver.variables.IntVar;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -15,7 +16,7 @@ public class ProblemExplanation {
     protected ArrayList<Constraint> goodCstrs;
     protected Model candidateModel;
     protected IntVar[][] candidateAttr;
-    protected HashMap<Constraint, ContradictionException> explanation;
+    protected HashMap<Constraint, ArrayList<Constraint>> explanation;
 
     /**
      * ProblemExplanation constructor
@@ -30,7 +31,7 @@ public class ProblemExplanation {
         this.goodCstrs = new ArrayList<Constraint>();
         this.candidateModel = m2;
         this.candidateAttr = attributes2;
-        this.explanation = new HashMap<Constraint, ContradictionException>();
+        this.explanation = new HashMap<Constraint, ArrayList<Constraint>>();
     }
 
     /**
@@ -40,7 +41,7 @@ public class ProblemExplanation {
         this.greedyExplanation();
         System.out.println(this.goodCstrs.toString());
         this.candidateExplanation();
-        System.out.println(this.explanation.toString());
+        this.printExplanation();
     }
 
     /**
@@ -50,6 +51,7 @@ public class ProblemExplanation {
         try {
             this.model.getSolver().propagate();
         } catch (ContradictionException e) {
+            this.model.getSolver().getEngine().flush();
             e.printStackTrace();
         }
         System.out.println(this.model.toString());
@@ -115,6 +117,7 @@ public class ProblemExplanation {
                 }
             } catch (ContradictionException e) {
                 // erreur lors de la propagation
+                this.model.getSolver().getEngine().flush();
                 System.out.println("contraint failed");
                 e.printStackTrace();
                 // suppression de la contrainte si choix de la valeur fixée précédemment n'abouti à rien
@@ -142,14 +145,20 @@ public class ProblemExplanation {
      */
     private void candidateExplanation() {
         ArrayList<Constraint> cstrToRemove = new ArrayList<Constraint>();
+
+        this.candidateModel.getEnvironment().worldPush();
+        System.out.println("current world index: (candidateExplanation first push) " + this.candidateModel.getEnvironment().getWorldIndex());
+
         try {
             this.candidateModel.getSolver().propagate();
         } catch (ContradictionException e) {
+            this.candidateModel.getSolver().getEngine().flush();
             e.printStackTrace();
         }
 
         System.out.println(this.candidateModel.toString());
-        this.candidateModel.getEnvironment().worldPush();
+        //this.candidateModel.getEnvironment().worldPush();
+        //System.out.println("current world index: (candidateExplanation push after propagate) " + this.candidateModel.getEnvironment().getWorldIndex());
 
         for(int i = 0; i < this.goodCstrs.size(); i++) {
             System.out.println("----- debut -----");
@@ -167,19 +176,13 @@ public class ProblemExplanation {
                     cstrToRemove.add(goodCstr2);
                     this.candidateModel.post(goodCstr2);
                     this.candidateModel.getSolver().propagate();
-                    // Ajout du MUS - recherche des contraintes créant notre contradiction
-
-                    // On part de notre état où on a une contradiction
-                    //     -> on prend la liste des contraintes qui mènent à cet état
-                    //     -> on enlève les contraintes une à une pour ne garder que celles qui créent la contraction
-                    //         (si on enlève ça change pas, on passe à la suivant, si quand on enlève il n'y a pu la contradiction on la
-                    //         remet et on passe à la suivante) -> quand on a plus que les contraintes qui créent la contraction c'est fini
-                    // Et on fait ça pour chaque contrainte que l'on rajoute à la main
                 }
             } catch (ContradictionException e) {
+                this.candidateModel.getSolver().getEngine().flush();
                 e.printStackTrace();
                 // save de la contrainte bonne et de pq elle est bonne
-                this.explanation.put(goodCstr, e);
+                // explanation of pb
+                this.explanation.put(goodCstr, this.mus(oppositeCstr));
                 System.out.println("explanation: " + explanation);
                 // suppression de toutes les mauvaises contraintes
                 for (Constraint cstr: cstrToRemove) {
@@ -188,13 +191,15 @@ public class ProblemExplanation {
                 cstrToRemove.clear();
                 this.candidateModel.unpost(oppositeCstr);
                 // retour a l'etat sauvegardé
-                this.model.getEnvironment().worldPop();
+                //this.model.getEnvironment().worldPop();
+                //System.out.println("current world index: (candidateExplanation contradiction pop) " + this.candidateModel.getEnvironment().getWorldIndex());
                 // ajout bonne contrainte
                 this.candidateModel.post(goodCstr);
                 // propag et push
                 try {
                     this.candidateModel.getSolver().propagate();
-                    this.candidateModel.getEnvironment().worldPush();
+                    //this.candidateModel.getEnvironment().worldPush();
+
                 } catch (ContradictionException contradictionException) {
                     // erreur ne devant pas arriver
                     contradictionException.printStackTrace();
@@ -205,6 +210,71 @@ public class ProblemExplanation {
 
         // hypothese 1 : on prend la contradiction, on part du principe qu'elle est vraie, on applique les autres
         //      contraintes connues une à une jusqu'à trouver une contradiction que l'on sauvegarde.
+    }
+
+    private ArrayList<Constraint> mus(Constraint oppositeCstr) {
+        ArrayList<Constraint> mus = new ArrayList<Constraint>();
+        // Ajout du MUS - recherche des contraintes créant notre contradiction
+
+        // On part de notre état où on a une contradiction
+        //     -> on prend la liste des contraintes qui mènent à cet état
+        //     -> on enlève les contraintes une à une pour ne garder que celles qui créent la contraction
+        //         (si on enlève ça change pas, on passe à la suivant, si quand on enlève il n'y a pu la contradiction on la
+        //         remet et on passe à la suivante) -> quand on a plus que les contraintes qui créent la contraction c'est fini
+        // Et on fait ça pour chaque contrainte que l'on rajoute à la main
+        this.candidateModel.getEnvironment().worldPop();
+        System.out.println("--- mus start ---");
+        this.candidateModel.getEnvironment().worldPush();
+        System.out.println("current world index: (after push) " + this.candidateModel.getEnvironment().getWorldIndex());
+        Constraint[] cstrs = this.candidateModel.getCstrs();
+
+        for(Constraint cstr : cstrs) {
+            this.candidateModel.unpost(cstr);
+            try {
+                this.candidateModel.getSolver().propagate();
+                // si pas d'erreur
+                mus.add(cstr);
+                System.out.println("cstr reinjected: " + cstr);
+                this.candidateModel.getEnvironment().worldPop();
+                System.out.println("current world index: (after try pop) " + this.candidateModel.getEnvironment().getWorldIndex());
+                this.candidateModel.post(cstr);
+                this.candidateModel.getEnvironment().worldPush();
+                System.out.println("current world index: (after try push) " + this.candidateModel.getEnvironment().getWorldIndex());
+            } catch (ContradictionException e) {
+                this.candidateModel.getSolver().getEngine().flush();
+                System.out.println("cstr error: " + cstr);
+                e.printStackTrace();
+            }
+        }
+
+        // reset
+        this.candidateModel.getEnvironment().worldPop();
+        this.candidateModel.getEnvironment().worldPush();
+        for(Constraint cstr : cstrs) {
+            if (!Arrays.asList(this.candidateModel.getCstrs()).contains(cstr)) {
+                this.candidateModel.post(cstr);
+            }
+        }
+        System.out.println("current world index: (after pop & push) " + this.candidateModel.getEnvironment().getWorldIndex());
+
+        // on supprime la contrainte inverse du mus car c'est elle qui nous permet de trouver l'explication sans réellement faire partie
+        // de l'explication
+        if (Arrays.asList(this.candidateModel.getCstrs()).contains(oppositeCstr)) {
+            mus.remove(oppositeCstr);
+        }
+        return mus;
+    }
+
+    private void printExplanation() {
+        System.out.println("***** results *****");
+        for (Constraint cstr : explanation.keySet()) {
+            ArrayList<Constraint> cstrs = explanation.get(cstr);
+            System.out.println("\n constraint: " + cstr + "\n explanations: ");
+            for (int i = 0; i < cstrs.size(); i++) {
+                System.out.println(i + ". " + cstrs.get(i));
+            }
+            System.out.println("-\n");
+        }
     }
 
     /**
