@@ -111,14 +111,7 @@ public class Pasta extends AbstractProblem {
         ProblemExplanation pe = new ProblemExplanation(model, attr, candidateModel, candidateAttr);
         pe.explain();
         print(attr);
-
-        /*
-        while (model.getSolver().solve()) {
-            System.out.println("--------------------------\n----------------------");
-            System.out.println(model.toString());
-            print(attr);
-        }
-        */
+        print(candidateAttr);
     }
 
     private void print(IntVar[][] pos) {
