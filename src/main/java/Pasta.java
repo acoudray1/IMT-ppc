@@ -110,7 +110,9 @@ public class Pasta extends AbstractProblem {
     public void solve() {
         ProblemExplanation pe = new ProblemExplanation(model, attr, candidateModel, candidateAttr);
         pe.explain();
+        System.out.println("\nRésolution problème sur le premier modèle:");
         print(attr);
+        System.out.println("\nRésolution problème sur le second modèle:");
         print(candidateAttr);
     }
 
